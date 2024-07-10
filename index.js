@@ -23,7 +23,6 @@ io.on("connection", (client) => {
     }
     chat.messages.push({ sender: senderId, text });
     await chat.save();
-    console.log(chat);
   });
 
   client.on("disconnected", () => {

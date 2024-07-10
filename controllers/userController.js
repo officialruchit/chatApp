@@ -6,7 +6,10 @@ exports.signup = async (req, res) => {
   try {
     const { name, mail, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    let user = await model.findOne({ mail });
+    if (user) {
+      return res.status(400).json({ msg: "User already exists" });
+    }
     const newuser = new model({
       name,
       mail,
