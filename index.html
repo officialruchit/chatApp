@@ -7,11 +7,20 @@
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
-    <h1>welcome</h1>
+    <h1>Chat Application</h1>
+
+    <input type="text" id="recipientId" placeholder="Recipient ID" />
+    <input type="text" id="message" placeholder="Message" />
+    <button onclick="sendMessage()">Send Message</button>
+
     <script>
       const socket = io();
-
-      socket.on();
+      const senderId = "668bce9a5beb65eddbe6bd12";
+      function sendMessage() {
+        const recipientId = document.getElementById("recipientId").value;
+        const text = document.getElementById("message").value;
+        socket.emit("sendMessage", { recipientId, text, senderId });
+      }
     </script>
   </body>
 </html>
