@@ -35,7 +35,7 @@
     <script>
       const socket = io();
       let token = null;
-
+      let senderId = null;
       async function signup() {
         const name = document.getElementById("signupName").value;
         const email = document.getElementById("signupEmail").value;
@@ -69,7 +69,9 @@
         });
         const data = await response.json();
         if (response.status === 201) {
-          token = data;
+          token = data.token;
+          senderId = data.userId;
+
           alert("Sign in successful!");
         } else {
           alert("Invalid email or password!");
@@ -79,7 +81,6 @@
       // Search Users Function
       async function searchUsers() {
         const query = document.getElementById("searchQuery").value;
-        console.log(query);
 
         const response = await fetch(`/search?query=${query}`, {
           method: "GET",
@@ -87,7 +88,6 @@
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log(response);
         const users = await response.json();
         const searchResults = document.getElementById("searchResults");
         searchResults.innerHTML = "";
@@ -98,7 +98,6 @@
         });
       }
 
-      const senderId = "668bce9a5beb65eddbe6bd12";
       function sendMessage() {
         const recipientId = document.getElementById("recipientId").value;
         const text = document.getElementById("message").value;
