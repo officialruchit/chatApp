@@ -15,94 +15,114 @@
     <input type="password" id="signupPassword" placeholder="Password" />
     <button onclick="signup()">Sign Up</button>
 
-    <!-- Sign-In Form -->
     <h2>Sign In</h2>
     <input type="email" id="signinEmail" placeholder="Email" />
     <input type="password" id="signinPassword" placeholder="Password" />
     <button onclick="signin()">Sign In</button>
 
-    <!-- Search Box -->
-    <h2>Search Users</h2>
-    <input type="text" id="searchQuery" placeholder="Search by name" />
-    <button onclick="searchUsers()">Search</button>
-    <ul id="searchResults"></ul>
-    <br />
+    <div id="chat">
+      <div>
+        <button onclick="joinchat()">Join Chat</button>
+      </div>
+    </div>
+    <div>
+      <label for="receiver">Send To (Socket ID): </label>
+      <input type="text" id="receiver">
+    </div>
+    <div>
+      <label for="message">Message: </label>
+      <input type="text" id="message">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+    <div id="messages"></div>
+  </div>
 
-    <input type="text" id="recipientId" placeholder="Recipient ID" />
-    <input type="text" id="message" placeholder="Message" />
-    <button onclick="sendMessage()">Send Message</button>
 
     <script>
       const socket = io();
-      let token = null;
+       let token = localStorage.getItem('token');;
       let senderId = null;
-      async function signup() {
-        const name = document.getElementById("signupName").value;
-        const email = document.getElementById("signupEmail").value;
-        const password = document.getElementById("signupPassword").value;
 
-        const response = await fetch("/signup", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name, mail: email, password }),
-        });
-        const data = await response.json();
-        if (response.status === 201) {
-          alert("Sign up successful!");
-        } else {
-          alert(data.msg || "Sign up failed!");
-        }
+   async function signup() {
+      const name = document.getElementById("signupName").value;
+      const email = document.getElementById("signupEmail").value;
+      const password = document.getElementById("signupPassword").value;
+
+      const response = await fetch("/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, mail: email, password }),
+      });
+
+      const data = await response.json();
+      if (response.status === 201) {
+        token = data;
+        localStorage.setItem('token', token);
+        alert("Sign up successful!");
+      } else {
+        alert(data.msg || "Sign up failed!");
       }
+    }
+    
+    async function signin() {
+      const email = document.getElementById("signinEmail").value;
+      const password = document.getElementById("signinPassword").value;
 
-      async function signin() {
-        const email = document.getElementById("signinEmail").value;
-        const password = document.getElementById("signinPassword").value;
+      const response = await fetch("/signin", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mail: email, password }),
+      });
 
-        const response = await fetch("/signin", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ mail: email, password }),
-        });
-        const data = await response.json();
-        if (response.status === 201) {
-          token = data.token;
-          senderId = data.userId;
-
-          alert("Sign in successful!");
-        } else {
-          alert("Invalid email or password!");
-        }
+      const data = await response.json();
+      if (response.status === 200) {
+        alert("Sign in successful!");
+      } else {
+        alert("Invalid email or password!");
       }
+    }
 
-      // Search Users Function
-      async function searchUsers() {
-        const query = document.getElementById("searchQuery").value;
-
-        const response = await fetch(`/search?query=${query}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const users = await response.json();
-        const searchResults = document.getElementById("searchResults");
-        searchResults.innerHTML = "";
-        users.forEach((user) => {
-          const li = document.createElement("li");
-          li.textContent = user.name;
-          searchResults.appendChild(li);
-        });
+async function joinchat(){
+  let token1=localStorage.getItem('token');
+  if (!token1) {
+        alert("Please sign in first.");
+        return;
       }
+      const response = await fetch('/me', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token1}`,
+        },
+      });
+      if (response.ok) {
+        const user = await response.json();
+        console.log("user",user)
+        userId = user._id;
+        
+        socket.emit('join', { userId, username: user.name });
+      } else {
+        console.error('Failed to fetch user details');
+      }
+}
 
       function sendMessage() {
-        const recipientId = document.getElementById("recipientId").value;
-        const text = document.getElementById("message").value;
-        socket.emit("sendMessage", { recipientId, text, senderId });
-      }
+      const receiverId = document.getElementById('receiver').value;
+      const message = document.getElementById('message').value;
+      console.log(message,receiverId)
+      socket.emit('private_message', { receiverId, message });
+    }
+
+    socket.on('private_message', (data) => {
+      const { message, sender } = data;
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.innerHTML += `<p><strong>${sender}:</strong> ${message}</p>`;
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; 
+    });
     </script>
   </body>
 </html>

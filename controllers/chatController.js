@@ -28,7 +28,6 @@ exports.getMessagesByRecipientName = async (req, res) => {
     }
 
     const recipientId = recipient._id;
-
     const chat = await Chat.findOne({
       participants: { $all: [userId, recipientId] },
     }).populate("messages.sender", "name");

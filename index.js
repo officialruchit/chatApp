@@ -6,23 +6,25 @@ const server = http.createServer(app);
 const io = new Server(server);
 const bodyparser = require("body-parser");
 app.use(bodyparser.json());
-const Chat = require("./models/chat");
 require("dotenv").config();
 const port = process.env.PORT || 3333;
 
 io.on("connection", (client) => {
   console.log("a user connected");
 
-  client.on("sendMessage", async (data) => {
-    const { recipientId, text, senderId } = data;
-    let chat = await Chat.findOne({
-      participants: { $all: [senderId, recipientId] },
+  client.on("join", ({ userId, username }) => {
+    console.log(`User ${userId} joined as ${username}`);
+    client.join(userId);
+  });
+
+  client.on("private_message", ({ receiverId, message }) => {
+    console.log(
+      `Private message to ${receiverId} from ${client.id}: ${message}`
+    );
+    client.to(receiverId).emit("private_message", {
+      message,
+      sender: client.id,
     });
-    if (!chat) {
-      chat = new Chat({ participants: [senderId, recipientId] });
-    }
-    chat.messages.push({ sender: senderId, text });
-    await chat.save();
   });
 
   client.on("disconnected", () => {
